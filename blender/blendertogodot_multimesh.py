@@ -18,6 +18,7 @@ bl_info = {
 }
 
 import bpy
+import os
 import random
 import math
 import json
@@ -133,6 +134,68 @@ def _get_or_make_collection(name):
     return coll
 
 
+def _source_name(data, cache):
+    """Nome do MODELO-FONTE (objeto mais 'limpo' que usa aquela malha),
+    casando com o nome do no no glTF (ex.: 'Bush_Common_Flowers')."""
+    if data.name in cache:
+        return cache[data.name]
+    cands = [ob for ob in bpy.data.objects if ob.data == data]
+    src = min(cands, key=lambda ob: (('.' in ob.name), len(ob.name)))
+    cache[data.name] = src.name
+    return src.name
+
+
+def _collect_from_collections(colls):
+    """Junta objetos de varias colecoes num unico conjunto multi-modelo."""
+    models = []
+    model_idx = []
+    xf = []
+    cache = {}
+    used_colls = []
+    for coll in colls:
+        n = 0
+        for o in coll.objects:
+            if o.type != 'MESH':
+                continue
+            key = _source_name(o.data, cache)
+            if key not in models:
+                models.append(key)
+            model_idx.append(models.index(key))
+            xf.extend(_matrix_to_xf(o.matrix_world))
+            n += 1
+        if n:
+            used_colls.append(coll.name)
+    return models, model_idx, xf, used_colls
+
+
+def _prefs(context):
+    ad = context.preferences.addons.get(__name__)
+    return ad.preferences if ad else None
+
+
+def _resolve_out_path(context, filename):
+    """Pasta lembrada (AddonPreferences) + nome do arquivo."""
+    pr = _prefs(context)
+    folder = ""
+    if pr and pr.export_dir:
+        folder = bpy.path.abspath(pr.export_dir)
+    if not folder:
+        folder = bpy.path.abspath("//") if bpy.data.filepath else os.path.expanduser("~")
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+    return os.path.join(folder, filename)
+
+
+class VSXPrefs(bpy.types.AddonPreferences):
+    bl_idname = __name__
+    export_dir: bpy.props.StringProperty(
+        name="Pasta de export", subtype='DIR_PATH', default="",
+        description="Pasta onde os JSON serao salvos (lembrada entre sessoes)")
+
+    def draw(self, context):
+        self.layout.prop(self, "export_dir")
+
+
 # --------------------------------------------------------------------------- #
 # Properties
 # --------------------------------------------------------------------------- #
@@ -172,14 +235,17 @@ class VSXProps(bpy.types.PropertyGroup):
         items=[('SAMPLE', "Amostrar superficie",
                 "Gera pontos na hora (denso; ideal p/ grama - 1 modelo)"),
                ('COLLECTION', "De uma colecao",
-                "Le objetos ja criados (multi-modelo; ideal p/ arvores/pedras)")])
+                "Le objetos ja criados (multi-modelo; ideal p/ arvores/pedras)"),
+               ('ALL', "Todas as colecoes scatter",
+                "Junta todas as colecoes '*_Scatter' num unico JSON multi-modelo")])
     sample_count: bpy.props.IntProperty(name="Quantidade", default=6000, min=1, max=500000)
     sample_model_name: bpy.props.StringProperty(name="Nome do modelo", default="grass")
     prop_source: bpy.props.PointerProperty(
         name="Colecao", type=bpy.types.Collection,
         description="Colecao de scatter ja criada (ex.: Pines_Scatter)")
-    json_path: bpy.props.StringProperty(
-        name="Arquivo JSON", subtype='FILE_PATH', default="//scatter.json")
+    export_filename: bpy.props.StringProperty(
+        name="Nome do arquivo", default="scatter.json",
+        description="Nome do JSON (a pasta e lembrada nas Preferencias do add-on)")
 
 
 # --------------------------------------------------------------------------- #
@@ -245,40 +311,34 @@ class VSX_OT_export(bpy.types.Operator):
                 model_idx.append(0)
                 xf.extend(_matrix_to_xf(M))
             info = "%s: %d inst" % (p.sample_model_name, len(model_idx))
-        else:  # COLLECTION
+
+        elif p.export_mode == 'COLLECTION':
             coll = p.prop_source
             if coll is None:
                 self.report({'ERROR'}, "Defina a Colecao.")
                 return {'CANCELLED'}
-            objs = [o for o in coll.objects if o.type == 'MESH']
-            if not objs:
+            models, model_idx, xf, used = _collect_from_collections([coll])
+            if not model_idx:
                 self.report({'ERROR'}, "A colecao nao tem malhas.")
                 return {'CANCELLED'}
-            # nome-chave = nome do MODELO-FONTE (objeto mais "limpo" que usa
-            # aquela malha), casando com o nome do no no glTF. Isso resolve casos
-            # como instancias "Bush_Common" cuja malha real e "Bush_Common_Flowers".
-            src_cache = {}
-
-            def source_name(data):
-                if data.name in src_cache:
-                    return src_cache[data.name]
-                cands = [ob for ob in bpy.data.objects if ob.data == data]
-                src = min(cands, key=lambda ob: (('.' in ob.name), len(ob.name)))
-                src_cache[data.name] = src.name
-                return src.name
-
-            for o in objs:
-                key = source_name(o.data)
-                if key not in models:
-                    models.append(key)
-                model_idx.append(models.index(key))
-                xf.extend(_matrix_to_xf(o.matrix_world))
             info = "%d inst, modelos %s" % (len(model_idx), models)
+
+        else:  # ALL: todas as colecoes '*_Scatter'
+            colls = [c for c in bpy.data.collections if c.name.endswith("_Scatter")]
+            if not colls:
+                self.report({'ERROR'}, "Nenhuma colecao '*_Scatter' encontrada.")
+                return {'CANCELLED'}
+            models, model_idx, xf, used = _collect_from_collections(colls)
+            if not model_idx:
+                self.report({'ERROR'}, "As colecoes scatter estao vazias.")
+                return {'CANCELLED'}
+            info = "%d inst de %s; modelos %s" % (len(model_idx), used, models)
 
         data = {"models": models, "count": len(model_idx),
                 "model": model_idx, "xf": xf}
-        path = bpy.path.abspath(p.json_path)
+        path = _resolve_out_path(context, p.export_filename)
         try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f)
         except Exception as ex:
@@ -338,16 +398,25 @@ class VSX_PT_panel(bpy.types.Panel):
             row.prop(p, "scale_min")
             row.prop(p, "scale_max")
             box.prop(p, "align_normal")
-        else:
+        elif p.export_mode == 'COLLECTION':
             box.prop(p, "prop_source")
-        box.prop(p, "json_path")
+        else:  # ALL
+            colls = [c.name for c in bpy.data.collections if c.name.endswith("_Scatter")]
+            box.label(text="Colecoes: %s" % (", ".join(colls) if colls else "(nenhuma)"))
+
+        pr = _prefs(context)
+        if pr:
+            box.prop(pr, "export_dir")
+        else:
+            box.label(text="(instale o add-on p/ lembrar a pasta)", icon='INFO')
+        box.prop(p, "export_filename")
         box.operator("vsx.export_scatter", icon='FILE_TICK')
 
 
 # --------------------------------------------------------------------------- #
 # Register
 # --------------------------------------------------------------------------- #
-_classes = (VSXProps, VSX_OT_scatter, VSX_OT_export, VSX_PT_panel)
+_classes = (VSXPrefs, VSXProps, VSX_OT_scatter, VSX_OT_export, VSX_PT_panel)
 
 
 def register():
