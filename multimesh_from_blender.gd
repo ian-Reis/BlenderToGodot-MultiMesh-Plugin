@@ -42,7 +42,14 @@ func _set_rebuild(_v):
 
 
 func _ready():
-	if not Engine.editor_hint:
+	if Engine.editor_hint:
+		return
+	# Em runtime, so reconstroi se a cena NAO tiver os nos ja "assados".
+	# Se voce ja construiu no editor (com Rebuild), os MultiMeshInstance ficam
+	# salvos na cena com seus materiais/config (ex.: shader de vento na grama) -
+	# preserva-los evita perder overrides e reconstruir a cada execucao.
+	# Node fresco (sem filhos) reconstroi normalmente a partir do JSON.
+	if get_child_count() == 0:
 		build()
 
 

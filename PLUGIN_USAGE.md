@@ -80,6 +80,14 @@ Adicione um **`MultiMeshFromBlender`** na cena, **na origem (0,0,0)**, e configu
   - `Collision Size Factor`: engrossa/afina o colisor (dimensionado pelo AABB da malha).
 - Marque **Rebuild** para (re)construir no editor.
 
+> **Assado vs. runtime:** ao clicar Rebuild no editor, os `MultiMeshInstance`
+> ficam **salvos na cena** com seus materiais/ajustes (ex.: um `ShaderMaterial`
+> de vento aplicado à grama). Em runtime o nó **preserva** esses nós salvos e
+> **não** reconstrói — assim seus overrides não se perdem. Um nó **sem filhos**
+> (nunca construído no editor) reconstrói sozinho a partir do JSON ao rodar.
+> Portanto: se você aplicar materiais manualmente nos `MM_*`, faça isso **depois**
+> do Rebuild, no editor.
+
 ---
 
 ## Formato do JSON
