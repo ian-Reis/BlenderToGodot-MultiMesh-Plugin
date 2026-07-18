@@ -6,21 +6,22 @@ extends Spatial
 #   - (opcional) material de vento a partir de grass.shader, para grama;
 #   - (opcional) StaticBody + CollisionShape por instancia dos modelos colidiveis.
 #
-# Serve tanto para GRAMA (JSON de 1 modelo + textura de vento)
-# quanto para PROPS (JSON multi-modelo + colisao). E o mesmo no.
+# RESOLUCAO DAS MALHAS (duas formas):
+#   A) DINAMICO (recomendado): defina "Source Scene" com a cena importada (.glb).
+#      As malhas sao resolvidas automaticamente pelo NOME de cada no
+#      (Pine_1, Grass_Common_Short, ...), que casa com os "models" do JSON.
+#      Nao precisa preencher Meshes/Model Names.
+#   B) MANUAL (fallback): preencha "Meshes" e "Model Names" na mesma ordem.
 #
-# USO:
-#   - Add Node > MultiMeshFromBlender, na origem (0,0,0).
-#   - "Meshes": as malhas dos modelos.
-#   - "Model Names": nomes na MESMA ORDEM das Meshes (casam com os do JSON).
-#   - "Json Path": o arquivo exportado.
-#   - Grama: preencha "Grass Texture" (gera o material de vento) OU "Override Material".
-#   - Props colidiveis: liste nomes em "Collidable Names".
-#   - Marque "Rebuild" para (re)construir no editor.
+# Marque "Rebuild" para (re)construir no editor.
 
+export(String, FILE, "*.json") var json_path = "res://scatter.json"
+
+# --- A) modo dinamico ---
+export(PackedScene) var source_scene = null
+# --- B) modo manual (usado se Source Scene estiver vazio) ---
 export(Array, Mesh) var meshes
 export(PoolStringArray) var model_names
-export(String, FILE, "*.json") var json_path = "res://scatter.json"
 
 # Material: prioridade override_material > (grass_shader + grass_texture) > material da malha
 export(Material) var override_material = null
@@ -51,10 +52,6 @@ func build():
 	for c in get_children():
 		c.queue_free()
 
-	if meshes.empty():
-		push_warning("MultiMeshFromBlender: defina 'Meshes'.")
-		return
-
 	var data = _load_json(json_path)
 	if data == null:
 		return
@@ -64,46 +61,49 @@ func build():
 	var midx = data["model"]
 	var xf = data["xf"]
 
-	# mapa: indice-do-JSON -> indice-da-mesh (por nome; ordem independente)
-	var json_to_mesh = []
-	for jm in range(models.size()):
-		json_to_mesh.append(_mesh_index_for(models[jm]))
+	var name_to_mesh = _resolve_meshes()   # nome -> Mesh
+	if name_to_mesh.empty():
+		push_warning("MultiMeshFromBlender: defina 'Source Scene' ou 'Meshes' + 'Model Names'.")
+		return
 
-	var buckets = []
-	for m in range(meshes.size()):
-		buckets.append([])
+	var mat = _resolve_material()
+
+	# agrupa transforms por malha
+	var by_mesh = {}          # Mesh -> Array<Transform>
+	var mesh_name = {}        # Mesh -> nome (para nomear o no)
 	var collide_list = []
+	var missing = {}
 
 	for i in range(count):
+		var nm = models[int(midx[i])]
+		if not name_to_mesh.has(nm):
+			missing[nm] = true
+			continue
+		var mesh = name_to_mesh[nm]
 		var o = i * 12
 		var t = Transform(
 			Vector3(xf[o + 0], xf[o + 1], xf[o + 2]),
 			Vector3(xf[o + 3], xf[o + 4], xf[o + 5]),
 			Vector3(xf[o + 6], xf[o + 7], xf[o + 8]),
 			Vector3(xf[o + 9], xf[o + 10], xf[o + 11]))
-		var jm = int(midx[i])
-		var mesh_i = json_to_mesh[jm]
-		if mesh_i < 0:
-			continue
-		buckets[mesh_i].append(t)
-		if _is_collidable(models[jm]):
-			collide_list.append({"t": t, "mesh": meshes[mesh_i]})
+		if not by_mesh.has(mesh):
+			by_mesh[mesh] = []
+			mesh_name[mesh] = nm
+		by_mesh[mesh].append(t)
+		if _is_collidable(nm):
+			collide_list.append({"t": t, "mesh": mesh})
 
-	var mat = _resolve_material()
-
-	for m in range(meshes.size()):
-		var list = buckets[m]
-		if list.empty():
-			continue
+	for mesh in by_mesh.keys():
+		var list = by_mesh[mesh]
 		var mm = MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = meshes[m]
+		mm.mesh = mesh
 		mm.instance_count = list.size()
 		for j in range(list.size()):
 			mm.set_instance_transform(j, list[j])
 
 		var mmi = MultiMeshInstance.new()
-		mmi.name = "MM_" + str(_name_for_mesh(m))
+		mmi.name = "MM_" + str(mesh_name[mesh])
 		mmi.multimesh = mm
 		mmi.cast_shadow = cast_shadow
 		if mat != null:
@@ -119,8 +119,31 @@ func build():
 		for item in collide_list:
 			_make_collision(holder, item["t"], item["mesh"])
 
+	if not missing.empty():
+		push_warning("MultiMeshFromBlender: sem malha para: " + str(missing.keys()))
 	print("MultiMeshFromBlender: ", count, " instancias, ",
-		meshes.size(), " modelo(s), ", collide_list.size(), " colisores.")
+		by_mesh.size(), " modelo(s), ", collide_list.size(), " colisores.")
+
+
+# --- resolucao de malhas ---
+func _resolve_meshes():
+	var d = {}
+	if source_scene != null:
+		var root = source_scene.instance()
+		_collect_meshes(root, d)
+		root.free()
+	else:
+		for i in range(meshes.size()):
+			if i < model_names.size() and meshes[i] != null:
+				d[model_names[i]] = meshes[i]
+	return d
+
+
+func _collect_meshes(node, d):
+	if node is MeshInstance and node.mesh != null:
+		d[node.name] = node.mesh
+	for c in node.get_children():
+		_collect_meshes(c, d)
 
 
 func _resolve_material():
@@ -163,22 +186,6 @@ func _make_collision(parent, xform, mesh):
 	cs.transform.origin = center
 	body.add_child(cs)
 	_own(cs)
-
-
-func _mesh_index_for(name):
-	for i in range(model_names.size()):
-		if model_names[i] == name:
-			return i if i < meshes.size() else -1
-	# fallback: se so ha 1 mesh e o JSON tambem tem 1 modelo, casa direto
-	if meshes.size() == 1 and model_names.empty():
-		return 0
-	return -1
-
-
-func _name_for_mesh(i):
-	if i < model_names.size():
-		return model_names[i]
-	return i
 
 
 func _is_collidable(name):

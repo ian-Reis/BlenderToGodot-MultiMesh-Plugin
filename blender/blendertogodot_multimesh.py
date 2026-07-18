@@ -254,8 +254,21 @@ class VSX_OT_export(bpy.types.Operator):
             if not objs:
                 self.report({'ERROR'}, "A colecao nao tem malhas.")
                 return {'CANCELLED'}
+            # nome-chave = nome do MODELO-FONTE (objeto mais "limpo" que usa
+            # aquela malha), casando com o nome do no no glTF. Isso resolve casos
+            # como instancias "Bush_Common" cuja malha real e "Bush_Common_Flowers".
+            src_cache = {}
+
+            def source_name(data):
+                if data.name in src_cache:
+                    return src_cache[data.name]
+                cands = [ob for ob in bpy.data.objects if ob.data == data]
+                src = min(cands, key=lambda ob: (('.' in ob.name), len(ob.name)))
+                src_cache[data.name] = src.name
+                return src.name
+
             for o in objs:
-                key = o.name.split('.')[0]      # "Pine_1.003" -> "Pine_1"
+                key = source_name(o.data)
                 if key not in models:
                     models.append(key)
                 model_idx.append(models.index(key))

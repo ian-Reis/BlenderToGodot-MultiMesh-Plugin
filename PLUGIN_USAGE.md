@@ -63,10 +63,14 @@ origem dos pontos e quais opções você liga.
 
 Adicione um **`MultiMeshFromBlender`** na cena, **na origem (0,0,0)**, e configure:
 
-- **Meshes**: as malhas dos modelos.
-- **Model Names**: os nomes na **mesma ordem** das Meshes (casam com os nomes do JSON;
-  a correspondência é **por nome**, então a ordem no JSON não precisa bater).
 - **Json Path**: o arquivo exportado.
+- **Resolução das malhas** — escolha um dos dois modos:
+  - **A) Dinâmico (recomendado)**: preencha **Source Scene** com a cena importada
+    (`.glb`). O plugin varre a cena e resolve as malhas **pelo nome de cada nó**
+    (`Pine_1`, `Grass_Common_Short`…), que casa com os `models` do JSON.
+    **Não precisa preencher Meshes/Model Names.**
+  - **B) Manual (fallback)**: **Meshes** + **Model Names** na mesma ordem, se você
+    preferir apontar recursos `.mesh` avulsos em vez da cena inteira.
 - **Grama**: preencha **Grass Texture** (gera o material de vento a partir de
   `grass.shader`) **ou** um **Override Material** próprio.
 - **Props colidíveis**: liste nomes em **Collidable Names** →
