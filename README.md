@@ -1,4 +1,4 @@
-# Godot Mesh Ready Plugin
+# BlenderToGodot MultiMesh Plugin
 
 Pipeline **Blender → Godot 3.6** para espalhar assets (grama, árvores, pedras,
 flores…) sobre um terreno usando **vertex paint** como máscara, e reproduzi-los
@@ -6,14 +6,14 @@ no Godot de forma otimizada via **MultiMesh** (1 draw call por modelo), com
 **vento** e **colisão** opcionais.
 
 A **raiz deste repositório é o próprio plugin do Godot** (`plugin.cfg` na raiz),
-para poder ser usado como **submódulo git** em `res://addons/grass_scatter`.
+para poder ser usado como **submódulo git** em `res://addons/blendertogodot_multimesh`.
 O add-on do Blender vem junto, na pasta [`blender/`](blender/), já que os dois
 trabalham em conjunto.
 
 | Parte | Caminho | Onde roda |
 |-------|---------|-----------|
-| Add-on de autoria/export | [`blender/blender_vertex_scatter.py`](blender/blender_vertex_scatter.py) | Blender |
-| Plugin de editor + nó `ScatterMultiMesh` + shader | raiz (`plugin.cfg`, `scatter_multimesh.gd`, `grass.shader`) | Godot 3.6 |
+| Add-on de autoria/export | [`blender/blendertogodot_multimesh.py`](blender/blendertogodot_multimesh.py) | Blender |
+| Plugin de editor + nó `MultiMeshFromBlender` + shader | raiz (`plugin.cfg`, `multimesh_from_blender.gd`, `grass.shader`) | Godot 3.6 |
 
 ## Como funciona (resumo)
 
@@ -21,7 +21,7 @@ trabalham em conjunto.
    No painel *Scatter* (barra lateral N), defina a máscara e:
    - **Espalhe** os modelos para visualizar; e/ou
    - **Exporte** um JSON unificado (transform completo, multi-modelo).
-2. **Godot**: adicione um nó **`ScatterMultiMesh`**, aponte para o JSON e as malhas.
+2. **Godot**: adicione um nó **`MultiMeshFromBlender`**, aponte para o JSON e as malhas.
    Ele monta um MultiMesh por modelo, aplica o shader de vento (grama) e gera
    colisão (props) conforme configurado.
 
@@ -29,13 +29,13 @@ trabalham em conjunto.
 
 ### Como submódulo (recomendado)
 ```bash
-git submodule add https://github.com/ian-Reis/Godot-Mesh-Ready-Plugin.git addons/grass_scatter
+git submodule add https://github.com/ian-Reis/BlenderToGodot-MultiMesh-Plugin.git addons/blendertogodot_multimesh
 ```
-Depois, no Godot: `Project > Project Settings > Plugins` → ative **"Scatter MultiMesh"**.
-O add-on do Blender fica em `addons/grass_scatter/blender/blender_vertex_scatter.py`.
+Depois, no Godot: `Project > Project Settings > Plugins` → ative **"BlenderToGodot MultiMesh Plugin"**.
+O add-on do Blender fica em `addons/blendertogodot_multimesh/blender/blendertogodot_multimesh.py`.
 
 ### Manual
-Copie o conteúdo do repositório para `res://addons/grass_scatter/` e ative o plugin.
+Copie o conteúdo do repositório para `res://addons/blendertogodot_multimesh/` e ative o plugin.
 
 ## Uso detalhado
 

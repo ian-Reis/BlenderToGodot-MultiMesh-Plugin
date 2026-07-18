@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: MIT
-# Vertex Scatter -> Godot
+# BlenderToGodot MultiMesh
 # Add-on do Blender: espalha assets sobre uma superficie mascarada por vertex paint
 # (evitar/apenas uma cor + limite de altura) e EXPORTA um unico JSON unificado
-# (transform completo, multi-modelo) para o no ScatterMultiMesh do Godot 3.6.
+# (transform completo, multi-modelo) para o no MultiMeshFromBlender do Godot 3.6.
 #
 # Instalar: Edit > Preferences > Add-ons > Install... e aponte para este arquivo.
 # Painel: barra lateral (N) do Viewport, aba "Scatter".
 
 bl_info = {
-    "name": "Vertex Scatter -> Godot",
+    "name": "BlenderToGodot MultiMesh",
     "author": "Cozy Kart tools",
     "version": (2, 0, 0),
     "blender": (4, 0, 0),

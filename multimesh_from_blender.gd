@@ -1,6 +1,6 @@
 tool
 extends Spatial
-# ScatterMultiMesh (Godot 3.6) - no unificado
+# MultiMeshFromBlender (Godot 3.6) - no unificado
 # Le o JSON exportado pelo add-on do Blender (transform completo, multi-modelo) e monta:
 #   - 1 MultiMeshInstance por modelo (visual otimizado, 1 draw call cada);
 #   - (opcional) material de vento a partir de grass.shader, para grama;
@@ -10,7 +10,7 @@ extends Spatial
 # quanto para PROPS (JSON multi-modelo + colisao). E o mesmo no.
 #
 # USO:
-#   - Add Node > ScatterMultiMesh, na origem (0,0,0).
+#   - Add Node > MultiMeshFromBlender, na origem (0,0,0).
 #   - "Meshes": as malhas dos modelos.
 #   - "Model Names": nomes na MESMA ORDEM das Meshes (casam com os do JSON).
 #   - "Json Path": o arquivo exportado.
@@ -52,7 +52,7 @@ func build():
 		c.queue_free()
 
 	if meshes.empty():
-		push_warning("ScatterMultiMesh: defina 'Meshes'.")
+		push_warning("MultiMeshFromBlender: defina 'Meshes'.")
 		return
 
 	var data = _load_json(json_path)
@@ -119,7 +119,7 @@ func build():
 		for item in collide_list:
 			_make_collision(holder, item["t"], item["mesh"])
 
-	print("ScatterMultiMesh: ", count, " instancias, ",
+	print("MultiMeshFromBlender: ", count, " instancias, ",
 		meshes.size(), " modelo(s), ", collide_list.size(), " colisores.")
 
 
@@ -196,12 +196,12 @@ func _own(node):
 func _load_json(path):
 	var f = File.new()
 	if f.open(path, File.READ) != OK:
-		push_error("ScatterMultiMesh: nao consegui abrir " + path)
+		push_error("MultiMeshFromBlender: nao consegui abrir " + path)
 		return null
 	var txt = f.get_as_text()
 	f.close()
 	var res = JSON.parse(txt)
 	if res.error != OK:
-		push_error("ScatterMultiMesh: JSON invalido - " + res.error_string)
+		push_error("MultiMeshFromBlender: JSON invalido - " + res.error_string)
 		return null
 	return res.result

@@ -14,9 +14,9 @@ origem dos pontos e quais opções você liga.
 
 | Parte | Arquivo | Onde roda |
 |-------|---------|-----------|
-| Add-on de autoria/export | `blender/blender_vertex_scatter.py` | Blender |
-| Plugin de editor | `plugin.cfg` + `grass_scatter_plugin.gd` | Godot |
-| Nó unificado | `scatter_multimesh.gd` (`ScatterMultiMesh`) | Godot |
+| Add-on de autoria/export | `blender/blendertogodot_multimesh.py` | Blender |
+| Plugin de editor | `plugin.cfg` + `plugin.gd` | Godot |
+| Nó unificado | `multimesh_from_blender.gd` (`MultiMeshFromBlender`) | Godot |
 | Shader de grama | `grass.shader` | Godot |
 
 ---
@@ -25,14 +25,14 @@ origem dos pontos e quais opções você liga.
 
 ### Blender
 1. `Edit > Preferences > Add-ons > Install…`
-2. Aponte para `blender/blender_vertex_scatter.py` e ative **"Vertex Scatter -> Godot"**.
+2. Aponte para `blender/blendertogodot_multimesh.py` e ative **"BlenderToGodot MultiMesh"**.
 3. O painel fica na **barra lateral (N)** do Viewport, aba **"Scatter"**.
 
 ### Godot 3.6
-1. Coloque o repositório em `res://addons/grass_scatter/` (via submódulo git ou cópia).
-2. `Project > Project Settings > Plugins` → ative **"Scatter MultiMesh"**.
-3. O nó **`ScatterMultiMesh`** aparece em **Add Node**.
-   O add-on do Blender fica em `addons/grass_scatter/blender/`.
+1. Coloque o repositório em `res://addons/blendertogodot_multimesh/` (via submódulo git ou cópia).
+2. `Project > Project Settings > Plugins` → ative **"BlenderToGodot MultiMesh Plugin"**.
+3. O nó **`MultiMeshFromBlender`** aparece em **Add Node**.
+   O add-on do Blender fica em `addons/blendertogodot_multimesh/blender/`.
 
 ---
 
@@ -61,7 +61,7 @@ origem dos pontos e quais opções você liga.
 
 ### 2) No Godot
 
-Adicione um **`ScatterMultiMesh`** na cena, **na origem (0,0,0)**, e configure:
+Adicione um **`MultiMeshFromBlender`** na cena, **na origem (0,0,0)**, e configure:
 
 - **Meshes**: as malhas dos modelos.
 - **Model Names**: os nomes na **mesma ordem** das Meshes (casam com os nomes do JSON;
@@ -96,21 +96,21 @@ Adicione um **`ScatterMultiMesh`** na cena, **na origem (0,0,0)**, e configure:
 ### Conversão de coordenadas
 O add-on converte Blender (Z-up) → Godot (Y-up) por `(x, y, z) → (x, z, -y)`,
 aplicando também a escala do terreno (usa `matrix_world`). Por isso o
-`ScatterMultiMesh` deve ficar na **origem do mundo**, no mesmo espaço do terreno
+`MultiMeshFromBlender` deve ficar na **origem do mundo**, no mesmo espaço do terreno
 importado. Se o terreno estiver sob um nó pai transformado, coloque o
-`ScatterMultiMesh` sob o **mesmo pai**.
+`MultiMeshFromBlender` sob o **mesmo pai**.
 
 ---
 
 ## Recomendações de performance (kart)
 
-- **Vegetação densa sem colisão** (grama, flores, plantas): `ScatterMultiMesh`
+- **Vegetação densa sem colisão** (grama, flores, plantas): `MultiMeshFromBlender`
   com material de vento. Milhares de instâncias = 1 draw call por modelo.
-- **Árvores/pedras**: `ScatterMultiMesh` com colisão **só nos modelos que importam**
+- **Árvores/pedras**: `MultiMeshFromBlender` com colisão **só nos modelos que importam**
   perto da pista (via `Collidable Names`). Visual barato + colisão onde o kart bate.
 - **Culling**: no Godot 3.6 o MultiMesh é cull como um bloco único. Para assets
   espalhados pelo mapa inteiro, considere **dividir por regiões** (um
-  `ScatterMultiMesh` por chunk) para recuperar culling.
+  `MultiMeshFromBlender` por chunk) para recuperar culling.
 - Material da grama: **alpha scissor** (pipeline opaco), nunca alpha blend.
   O fade por distância usa dithering (screen-door), compatível com opaco.
 
