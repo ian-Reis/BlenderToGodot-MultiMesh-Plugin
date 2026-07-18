@@ -71,8 +71,9 @@ Adicione um **`MultiMeshFromBlender`** na cena, **na origem (0,0,0)**, e configu
     **Não precisa preencher Meshes/Model Names.**
   - **B) Manual (fallback)**: **Meshes** + **Model Names** na mesma ordem, se você
     preferir apontar recursos `.mesh` avulsos em vez da cena inteira.
-- **Grama**: preencha **Grass Texture** (gera o material de vento a partir de
-  `grass.shader`) **ou** um **Override Material** próprio.
+- **Override Material** (opcional): material único aplicado a todas as malhas do nó
+  (vazio = usa o material de cada malha). Para grama de *card* com vento, monte um
+  `ShaderMaterial` com `grass.shader` e coloque aqui.
 - **Props colidíveis**: liste nomes em **Collidable Names** →
   gera `StaticBody` + `CollisionShape` por instância.
   - `Collision Shape Type`: Box / Cylinder / Sphere (Cylinder é ótimo p/ tronco).

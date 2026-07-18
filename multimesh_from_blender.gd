@@ -3,7 +3,7 @@ extends Spatial
 # MultiMeshFromBlender (Godot 3.6) - no unificado
 # Le o JSON exportado pelo add-on do Blender (transform completo, multi-modelo) e monta:
 #   - 1 MultiMeshInstance por modelo (visual otimizado, 1 draw call cada);
-#   - (opcional) material de vento a partir de grass.shader, para grama;
+#   - (opcional) material unico via Override Material (ex.: shader de vento);
 #   - (opcional) StaticBody + CollisionShape por instancia dos modelos colidiveis.
 #
 # RESOLUCAO DAS MALHAS (duas formas):
@@ -23,9 +23,9 @@ export(PackedScene) var source_scene = null
 export(Array, Mesh) var meshes
 export(PoolStringArray) var model_names
 
-# Material: prioridade override_material > (grass_shader + grass_texture) > material da malha
+# Material unico opcional para todas as malhas do no (vazio = usa o material de cada malha).
+# Para grama de card com vento, monte um ShaderMaterial com grass.shader e coloque aqui.
 export(Material) var override_material = null
-export(Texture) var grass_texture = null
 
 # Colisao (para modelos listados em collidable_names)
 export(PoolStringArray) var collidable_names
@@ -35,8 +35,6 @@ export(int, LAYERS_3D_PHYSICS) var collision_layer = 1
 
 export(int, "Off", "On", "DoubleSided", "ShadowsOnly") var cast_shadow = 1
 export(bool) var rebuild setget _set_rebuild
-
-const GRASS_SHADER := preload("grass.shader")
 
 
 func _set_rebuild(_v):
@@ -147,14 +145,7 @@ func _collect_meshes(node, d):
 
 
 func _resolve_material():
-	if override_material != null:
-		return override_material
-	if grass_texture != null:
-		var sm = ShaderMaterial.new()
-		sm.shader = GRASS_SHADER
-		sm.set_shader_param("texture_albedo", grass_texture)
-		return sm
-	return null
+	return override_material
 
 
 func _make_collision(parent, xform, mesh):
