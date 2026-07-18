@@ -145,6 +145,17 @@ def _source_name(data, cache):
     return src.name
 
 
+def _scatter_collections():
+    """Colecoes que passaram pelo scatter: marcadas com a tag 'btg_scatter'
+    ou cujo nome comeca com 'Scatter' / termina com '_Scatter'."""
+    out = []
+    for c in bpy.data.collections:
+        n = c.name.lower()
+        if c.get("btg_scatter") or n.startswith("scatter") or n.endswith("_scatter"):
+            out.append(c)
+    return out
+
+
 def _collect_from_collections(colls):
     """Junta objetos de varias colecoes num unico conjunto multi-modelo."""
     models = []
@@ -237,7 +248,7 @@ class VSXProps(bpy.types.PropertyGroup):
                ('COLLECTION', "De uma colecao",
                 "Le objetos ja criados (multi-modelo; ideal p/ arvores/pedras)"),
                ('ALL', "Todas as colecoes scatter",
-                "Junta todas as colecoes '*_Scatter' num unico JSON multi-modelo")])
+                "Junta todas as colecoes de scatter num unico JSON multi-modelo")])
     sample_count: bpy.props.IntProperty(name="Quantidade", default=6000, min=1, max=500000)
     sample_model_name: bpy.props.StringProperty(name="Nome do modelo", default="grass")
     prop_source: bpy.props.PointerProperty(
@@ -273,6 +284,7 @@ class VSX_OT_scatter(bpy.types.Operator):
             return {'CANCELLED'}
 
         coll = _get_or_make_collection(p.out_collection)
+        coll["btg_scatter"] = True   # marca p/ o export "Todas as colecoes scatter"
         for o in list(coll.objects):
             bpy.data.objects.remove(o, do_unlink=True)
 
@@ -323,10 +335,10 @@ class VSX_OT_export(bpy.types.Operator):
                 return {'CANCELLED'}
             info = "%d inst, modelos %s" % (len(model_idx), models)
 
-        else:  # ALL: todas as colecoes '*_Scatter'
-            colls = [c for c in bpy.data.collections if c.name.endswith("_Scatter")]
+        else:  # ALL: todas as colecoes de scatter
+            colls = _scatter_collections()
             if not colls:
-                self.report({'ERROR'}, "Nenhuma colecao '*_Scatter' encontrada.")
+                self.report({'ERROR'}, "Nenhuma colecao de scatter encontrada.")
                 return {'CANCELLED'}
             models, model_idx, xf, used = _collect_from_collections(colls)
             if not model_idx:
@@ -401,7 +413,7 @@ class VSX_PT_panel(bpy.types.Panel):
         elif p.export_mode == 'COLLECTION':
             box.prop(p, "prop_source")
         else:  # ALL
-            colls = [c.name for c in bpy.data.collections if c.name.endswith("_Scatter")]
+            colls = [c.name for c in _scatter_collections()]
             box.label(text="Colecoes: %s" % (", ".join(colls) if colls else "(nenhuma)"))
 
         pr = _prefs(context)
