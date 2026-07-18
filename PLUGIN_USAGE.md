@@ -14,10 +14,10 @@ origem dos pontos e quais opções você liga.
 
 | Parte | Arquivo | Onde roda |
 |-------|---------|-----------|
-| Add-on de autoria/export | `tools/blender_vertex_scatter.py` | Blender |
-| Plugin de editor | `addons/grass_scatter/plugin.cfg` + `grass_scatter_plugin.gd` | Godot |
-| Nó unificado | `addons/grass_scatter/scatter_multimesh.gd` (`ScatterMultiMesh`) | Godot |
-| Shader de grama | `addons/grass_scatter/grass.shader` | Godot |
+| Add-on de autoria/export | `blender/blender_vertex_scatter.py` | Blender |
+| Plugin de editor | `plugin.cfg` + `grass_scatter_plugin.gd` | Godot |
+| Nó unificado | `scatter_multimesh.gd` (`ScatterMultiMesh`) | Godot |
+| Shader de grama | `grass.shader` | Godot |
 
 ---
 
@@ -25,13 +25,14 @@ origem dos pontos e quais opções você liga.
 
 ### Blender
 1. `Edit > Preferences > Add-ons > Install…`
-2. Aponte para `tools/blender_vertex_scatter.py` e ative **"Vertex Scatter -> Godot"**.
+2. Aponte para `blender/blender_vertex_scatter.py` e ative **"Vertex Scatter -> Godot"**.
 3. O painel fica na **barra lateral (N)** do Viewport, aba **"Scatter"**.
 
 ### Godot 3.6
-1. Copie a pasta `addons/grass_scatter/` para dentro do projeto (`res://addons/`).
+1. Coloque o repositório em `res://addons/grass_scatter/` (via submódulo git ou cópia).
 2. `Project > Project Settings > Plugins` → ative **"Scatter MultiMesh"**.
 3. O nó **`ScatterMultiMesh`** aparece em **Add Node**.
+   O add-on do Blender fica em `addons/grass_scatter/blender/`.
 
 ---
 

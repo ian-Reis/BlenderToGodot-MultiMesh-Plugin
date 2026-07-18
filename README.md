@@ -5,12 +5,15 @@ flores…) sobre um terreno usando **vertex paint** como máscara, e reproduzi-l
 no Godot de forma otimizada via **MultiMesh** (1 draw call por modelo), com
 **vento** e **colisão** opcionais.
 
-Os dois lados trabalham em conjunto:
+A **raiz deste repositório é o próprio plugin do Godot** (`plugin.cfg` na raiz),
+para poder ser usado como **submódulo git** em `res://addons/grass_scatter`.
+O add-on do Blender vem junto, na pasta [`blender/`](blender/), já que os dois
+trabalham em conjunto.
 
-| Parte | Pasta | Onde roda |
-|-------|-------|-----------|
-| Add-on de autoria/export | [`tools/blender_vertex_scatter.py`](tools/blender_vertex_scatter.py) | Blender |
-| Plugin de editor + nó `ScatterMultiMesh` + shader | [`addons/grass_scatter/`](addons/grass_scatter/) | Godot 3.6 |
+| Parte | Caminho | Onde roda |
+|-------|---------|-----------|
+| Add-on de autoria/export | [`blender/blender_vertex_scatter.py`](blender/blender_vertex_scatter.py) | Blender |
+| Plugin de editor + nó `ScatterMultiMesh` + shader | raiz (`plugin.cfg`, `scatter_multimesh.gd`, `grass.shader`) | Godot 3.6 |
 
 ## Como funciona (resumo)
 
@@ -22,15 +25,26 @@ Os dois lados trabalham em conjunto:
    Ele monta um MultiMesh por modelo, aplica o shader de vento (grama) e gera
    colisão (props) conforme configurado.
 
-## Instalação e uso detalhados
+## Instalar
 
-Veja **[`addons/grass_scatter/README.md`](addons/grass_scatter/README.md)** — cobre
-instalação nos dois lados, o formato do JSON, a conversão de coordenadas
-(Blender Z-up → Godot Y-up) e recomendações de performance.
+### Como submódulo (recomendado)
+```bash
+git submodule add https://github.com/ian-Reis/Godot-Mesh-Ready-Plugin.git addons/grass_scatter
+```
+Depois, no Godot: `Project > Project Settings > Plugins` → ative **"Scatter MultiMesh"**.
+O add-on do Blender fica em `addons/grass_scatter/blender/blender_vertex_scatter.py`.
+
+### Manual
+Copie o conteúdo do repositório para `res://addons/grass_scatter/` e ative o plugin.
+
+## Uso detalhado
+
+Veja **[PLUGIN_USAGE.md](PLUGIN_USAGE.md)** — instalação nos dois lados, formato do
+JSON, conversão de coordenadas (Blender Z-up → Godot Y-up) e dicas de performance.
 
 ## Compatibilidade
 
-- **Godot 3.6** (usa `MultiMeshInstance`, `StaticBody`, `CollisionShape` da API 3.x).
+- **Godot 3.6** (`MultiMeshInstance`, `StaticBody`, `CollisionShape` da API 3.x).
 - **Blender 4.0+** (add-on testado com a API `bpy` 4.x/5.x).
 
 ## Licença

@@ -1,0 +1,16 @@
+# Normaliza fim de linha: LF no repositório, conversão automática no checkout.
+* text=auto eol=lf
+
+# Tipos de texto do projeto
+*.gd     text eol=lf
+*.shader text eol=lf
+*.cfg    text eol=lf
+*.py     text eol=lf
+*.md     text eol=lf
+*.json   text eol=lf
+
+# Binários (sem conversão)
+*.png binary
+*.jpg binary
+*.webp binary
+*.blend binary
