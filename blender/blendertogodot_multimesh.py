@@ -280,7 +280,7 @@ class VSX_OT_export(bpy.types.Operator):
 # UI
 # --------------------------------------------------------------------------- #
 class VSX_PT_panel(bpy.types.Panel):
-    bl_label = "Vertex Scatter -> Godot"
+    bl_label = "BlenderToGodot MultiMesh"
     bl_idname = "VSX_PT_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
