@@ -1,0 +1,21 @@
+# Godot
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Dados de exemplo gerados pelo export
+scatter.json
+grass_transforms.json
+props_transforms.json
+
+# Blender
+*.blend1
+*.blend2
+__pycache__/
+*.pyc
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
